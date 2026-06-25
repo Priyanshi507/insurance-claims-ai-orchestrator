@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:uipath="http://uipath.org/schema/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="sample-diagram" targetNamespace="http://bpmn.io/schema/bpmn" exporter="UiPath Studio Web (https://uipath.com)" exporterVersion="c9d4fac8">
+  <bpmn:process id="Process_1" name="Invoice_Processing" isExecutable="false">
+    <bpmn:extensionElements>
+      <uipath:variables version="v1">
+        <uipath:inputOutput id="policyCoverageResponse" name="PolicyCoverageResponse" type="jsonSchema" elementId="Event_VendorResponse" custom="true"><![CDATA[{"type":"object","$schema":"http://json-schema.org/draft-07/schema#"}]]></uipath:inputOutput>
+        <uipath:inputOutput id="fraudScore" name="FraudScore" type="number" elementId="Activity_TwoWayMatch" custom="true" />
+        <uipath:inputOutput id="riskLevel" name="RiskLevel" type="string" elementId="Activity_TwoWayMatch" custom="true" />
+        <uipath:inputOutput id="fraudReasoning" name="FraudReasoning" type="string" elementId="Activity_TwoWayMatch" custom="true" />
+        <uipath:inputOutput id="requiresHumanReview" name="RequiresHumanReview" type="boolean" elementId="Activity_TwoWayMatch" custom="true" />
+        <uipath:inputOutput id="v5W8hRmPi" name="ApprovalStatus" type="boolean" elementId="Activity_TwoWayMatch" custom="true" />
+        <uipath:inputOutput id="claimId" name="ClaimId" type="string" elementId="Activity_InvoiceExtract" custom="true" />
+        <uipath:inputOutput id="claimData" name="ClaimData" type="jsonSchema" elementId="Activity_InvoiceExtract" custom="true"><![CDATA[{"type":"object","$schema":"http://json-schema.org/draft-07/schema#"}]]></uipath:inputOutput>
+        <uipath:inputOutput id="policyNumber" name="PolicyNumber" type="string" elementId="Activity_InvoiceExtract" custom="true" />
+        <uipath:inputOutput id="settlementResult" name="SettlementResult" type="jsonSchema" elementId="Activity_ProcessPayment" custom="true"><![CDATA[{"type":"object","$schema":"http://json-schema.org/draft-07/schema#"}]]></uipath:inputOutput>
+      </uipath:variables>
+      <uipath:migrationVersion version="15" />
+    </bpmn:extensionElements>
+    <bpmn:startEvent id="Event_Start" name="Claim Received">
+      <bpmn:extensionElements>
+        <uipath:entryPointId value="4171ef9d-f3e9-4e62-bd6b-174633895347" />
+      </bpmn:extensionElements>
+      <bpmn:outgoing>Flow_StartToExtract</bpmn:outgoing>
+      <bpmn:messageEventDefinition />
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Activity_InvoiceExtract" name="Extract Claim Details (IXP)">
+      <bpmn:extensionElements>
+        <uipath:activity version="v1">
+          <uipath:type value="Orchestrator.StartJob" version="v1" />
+          <uipath:output name="ClaimId" type="string" var="claimId" custom="true" />
+          <uipath:output name="ClaimData" type="json" var="claimData" custom="true" />
+          <uipath:output name="PolicyNumber" type="string" var="policyNumber" custom="true" />
+        </uipath:activity>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_StartToExtract</bpmn:incoming>
+      <bpmn:incoming>edge_Event_VendorResponse-Activity_InvoiceExtractmFFmyw</bpmn:incoming>
+      <bpmn:outgoing>edge_Activity_InvoiceExtract-Activity_Ook413rqbZj8</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Activity_TwoWayMatch" name="Run Fraud Risk Assessment (Agent)">
+      <bpmn:extensionElements>
+        <uipath:activity version="v1">
+          <uipath:type value="Agent.RunAgent" version="v1" />
+          <uipath:context>
+            <uipath:inputSchema type="jsonSchema"><![CDATA[{"$schema":"http://json-schema.org/draft-07/schema#","type":"object","properties":{"body":{"type":"object"}},"required":[]}]]></uipath:inputSchema>
+          </uipath:context>
+          <uipath:input name="body" type="json" target="body"><![CDATA[{"body":{"body":{"body":{"claimant_name":null,"policy_number":null,"incident_date":null,"submission_date":null,"claimed_amount":null,"incident_description":null}}}}]]></uipath:input>
+          <uipath:output name="fraud_score" type="number" var="fraudScore" custom="true" />
+          <uipath:output name="risk_level" type="string" var="riskLevel" custom="true" />
+          <uipath:output name="reasoning" type="string" var="fraudReasoning" custom="true" />
+          <uipath:output name="requires_human_review" type="boolean" var="requiresHumanReview" custom="true" />
+        </uipath:activity>
+      </bpmn:extensionElements>
+      <bpmn:incoming>edge_Activity_iD34k7-Activity_TwoWayMatchr0HAYF</bpmn:incoming>
+      <bpmn:outgoing>Flow_MatchToGateway</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_MatchCheck" name="Risk Level Low?">
+      <bpmn:incoming>Flow_MatchToGateway</bpmn:incoming>
+      <bpmn:outgoing>edge_Aa4sOL</bpmn:outgoing>
+      <bpmn:outgoing>edge_DgvYFq</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="Gateway_ApprovalCheck" name="Adjuster Approved?">
+      <bpmn:incoming>edge_88ghrw</bpmn:incoming>
+      <bpmn:incoming>edge_6ScGC0</bpmn:incoming>
+      <bpmn:incoming>edge_DgvYFq</bpmn:incoming>
+      <bpmn:outgoing>Flow_ApprovedToPayment</bpmn:outgoing>
+      <bpmn:outgoing>edge_Bz91yd</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Activity_ProcessPayment" name="Process Settlement Payment">
+      <bpmn:extensionElements>
+        <uipath:activity version="v1">
+          <uipath:type value="Orchestrator.StartJob" version="v1" />
+          <uipath:output name="SettlementResult" type="json" var="settlementResult" custom="true" />
+        </uipath:activity>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ApprovedToPayment</bpmn:incoming>
+      <bpmn:outgoing>Flow_PaymentToUpdateERP</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Activity_UpdateERP" name="Update Claims System">
+      <bpmn:incoming>Flow_PaymentToUpdateERP</bpmn:incoming>
+      <bpmn:outgoing>Flow_UpdateToEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Event_End" name="Claim Processing Complete">
+      <bpmn:incoming>Flow_UpdateToEnd</bpmn:incoming>
+      <bpmn:incoming>edge_lqa8gl</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sendTask id="Activity_SendVendorEmail" name="Notify Claimant &#38; Request More Details">
+      <bpmn:incoming>edge_Bz91yd</bpmn:incoming>
+      <bpmn:outgoing>Flow_EmailToGateway</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:eventBasedGateway id="Gateway_WaitResponse" name="Wait for Response">
+      <bpmn:incoming>Flow_EmailToGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_GatewayToResponseEvent</bpmn:outgoing>
+      <bpmn:outgoing>Flow_GatewayToTimeout</bpmn:outgoing>
+    </bpmn:eventBasedGateway>
+    <bpmn:intermediateCatchEvent id="Event_VendorResponse" name="Claimant Response Received">
+      <bpmn:extensionElements>
+        <uipath:event version="v1">
+          <uipath:type value="Intsvc.WaitForEvent" version="v1" />
+          <uipath:output name="PolicyCoverageResponse" type="json" var="policyCoverageResponse" custom="true" />
+        </uipath:event>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_GatewayToResponseEvent</bpmn:incoming>
+      <bpmn:outgoing>edge_Event_VendorResponse-Activity_InvoiceExtractmFFmyw</bpmn:outgoing>
+      <bpmn:messageEventDefinition />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:intermediateCatchEvent id="Event_ResponseTimeout" name="Response Timeout (3 days)">
+      <bpmn:incoming>Flow_GatewayToTimeout</bpmn:incoming>
+      <bpmn:outgoing>edge_lqa8gl</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">P3D</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:serviceTask id="Activity_JxlkHJ" name="Escalate to Adjuster (Human Task)">
+      <bpmn:incoming>edge_Aa4sOL</bpmn:incoming>
+      <bpmn:outgoing>edge_88ghrw</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:boundaryEvent id="Event_ximah3" attachedToRef="Activity_JxlkHJ">
+      <bpmn:outgoing>edge_T9hQMG</bpmn:outgoing>
+      <bpmn:errorEventDefinition />
+    </bpmn:boundaryEvent>
+    <bpmn:userTask id="Activity_csPgXO" name="Adjuster Review &#38; Decision">
+      <bpmn:incoming>edge_T9hQMG</bpmn:incoming>
+      <bpmn:outgoing>edge_6ScGC0</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:receiveTask id="Activity_Ook413" name="Lookup Policy &#38; Coverage">
+      <bpmn:extensionElements>
+        <uipath:event version="v1">
+          <uipath:type value="Intsvc.WaitForEvent" version="v1" />
+          <uipath:context>
+            <uipath:input name="connectorKey" type="string" value="" />
+            <uipath:input name="metadata" type="json"><![CDATA[{"designTimeMetadata":{},"metadataState":{},"telemetryData":{"connectorKey":""},"inputMetadata":{},"errorState":{"hasError":true}}]]></uipath:input>
+          </uipath:context>
+          <uipath:input name="body" type="json" target="body"><![CDATA[{}]]></uipath:input>
+        </uipath:event>
+      </bpmn:extensionElements>
+      <bpmn:incoming>edge_Activity_InvoiceExtract-Activity_Ook413rqbZj8</bpmn:incoming>
+      <bpmn:outgoing>edge_Activity_Ook413-Activity_iD34k7yOKAD6</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:receiveTask id="Activity_iD34k7" name="Retrieve Policy Limits">
+      <bpmn:extensionElements>
+        <uipath:event version="v1">
+          <uipath:type value="Intsvc.WaitForEvent" version="v1" />
+          <uipath:context>
+            <uipath:input name="connectorKey" type="string" value="" />
+            <uipath:input name="metadata" type="json"><![CDATA[{"designTimeMetadata":{},"metadataState":{},"telemetryData":{"connectorKey":""},"inputMetadata":{},"errorState":{"hasError":true}}]]></uipath:input>
+          </uipath:context>
+          <uipath:input name="body" type="json" target="body"><![CDATA[{}]]></uipath:input>
+        </uipath:event>
+      </bpmn:extensionElements>
+      <bpmn:incoming>edge_Activity_Ook413-Activity_iD34k7yOKAD6</bpmn:incoming>
+      <bpmn:outgoing>edge_Activity_iD34k7-Activity_TwoWayMatchr0HAYF</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:sequenceFlow id="Flow_StartToExtract" sourceRef="Event_Start" targetRef="Activity_InvoiceExtract" />
+    <bpmn:sequenceFlow id="Flow_MatchToGateway" sourceRef="Activity_TwoWayMatch" targetRef="Gateway_MatchCheck" />
+    <bpmn:sequenceFlow id="Flow_EmailToGateway" sourceRef="Activity_SendVendorEmail" targetRef="Gateway_WaitResponse" />
+    <bpmn:sequenceFlow id="Flow_GatewayToResponseEvent" sourceRef="Gateway_WaitResponse" targetRef="Event_VendorResponse" />
+    <bpmn:sequenceFlow id="Flow_GatewayToTimeout" sourceRef="Gateway_WaitResponse" targetRef="Event_ResponseTimeout" />
+    <bpmn:sequenceFlow id="Flow_ApprovedToPayment" name="Yes" sourceRef="Gateway_ApprovalCheck" targetRef="Activity_ProcessPayment">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=vars.v5W8hRmPi==true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_PaymentToUpdateERP" sourceRef="Activity_ProcessPayment" targetRef="Activity_UpdateERP" />
+    <bpmn:sequenceFlow id="Flow_UpdateToEnd" sourceRef="Activity_UpdateERP" targetRef="Event_End" />
+    <bpmn:sequenceFlow id="edge_lqa8gl" sourceRef="Event_ResponseTimeout" targetRef="Event_End" />
+    <bpmn:sequenceFlow id="edge_Event_VendorResponse-Activity_InvoiceExtractmFFmyw" sourceRef="Event_VendorResponse" targetRef="Activity_InvoiceExtract" />
+    <bpmn:sequenceFlow id="edge_Aa4sOL" name="HIGH/MEDIUM Risk" sourceRef="Gateway_MatchCheck" targetRef="Activity_JxlkHJ">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=vars.requiresHumanReview==true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="edge_88ghrw" sourceRef="Activity_JxlkHJ" targetRef="Gateway_ApprovalCheck" />
+    <bpmn:sequenceFlow id="edge_Bz91yd" name="No" sourceRef="Gateway_ApprovalCheck" targetRef="Activity_SendVendorEmail">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=vars.v5W8hRmPi==false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="edge_T9hQMG" sourceRef="Event_ximah3" targetRef="Activity_csPgXO" />
+    <bpmn:sequenceFlow id="edge_6ScGC0" sourceRef="Activity_csPgXO" targetRef="Gateway_ApprovalCheck" />
+    <bpmn:sequenceFlow id="edge_DgvYFq" name="LOW Risk" sourceRef="Gateway_MatchCheck" targetRef="Gateway_ApprovalCheck">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=vars.requiresHumanReview==false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="edge_Activity_InvoiceExtract-Activity_Ook413rqbZj8" sourceRef="Activity_InvoiceExtract" targetRef="Activity_Ook413" />
+    <bpmn:sequenceFlow id="edge_Activity_Ook413-Activity_iD34k7yOKAD6" sourceRef="Activity_Ook413" targetRef="Activity_iD34k7" />
+    <bpmn:sequenceFlow id="edge_Activity_iD34k7-Activity_TwoWayMatchr0HAYF" sourceRef="Activity_iD34k7" targetRef="Activity_TwoWayMatch" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
+      <bpmndi:BPMNShape id="S_Event_Start" bpmnElement="Event_Start">
+        <dc:Bounds x="165.60794209064125" y="262" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="165.60794209064125" y="303" width="36" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Activity_InvoiceExtract" bpmnElement="Activity_InvoiceExtract">
+        <dc:Bounds x="260" y="240" width="100" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="260" y="325" width="100" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Activity_TwoWayMatch" bpmnElement="Activity_TwoWayMatch">
+        <dc:Bounds x="717.1497000926056" y="240" width="100" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="717.1497000926056" y="325" width="100" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Gateway_MatchCheck" bpmnElement="Gateway_MatchCheck">
+        <dc:Bounds x="876.9602895467939" y="255" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="876.9602895467939" y="310" width="50" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Gateway_ApprovalCheck" bpmnElement="Gateway_ApprovalCheck">
+        <dc:Bounds x="1083.3337463552236" y="255" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1083.3337463552236" y="310" width="50" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Activity_ProcessPayment" bpmnElement="Activity_ProcessPayment">
+        <dc:Bounds x="1308.382734997551" y="240" width="100" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1308.382734997551" y="325" width="100" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Activity_UpdateERP" bpmnElement="Activity_UpdateERP">
+        <dc:Bounds x="1456.0857867187108" y="240" width="100" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1456.0857867187108" y="325" width="100" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Event_End" bpmnElement="Event_End">
+        <dc:Bounds x="1725.1214020744003" y="262" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1725.1214020744003" y="303" width="36" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Activity_SendVendorEmail" bpmnElement="Activity_SendVendorEmail">
+        <dc:Bounds x="1136.4041620103192" y="623.2309461794201" width="100" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1136.4041620103192" y="708.2309461794201" width="100" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Gateway_WaitResponse" bpmnElement="Gateway_WaitResponse">
+        <dc:Bounds x="1161.4041620103192" y="763.3395335276908" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1161.4041620103192" y="818.3395335276908" width="50" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Event_VendorResponse" bpmnElement="Event_VendorResponse">
+        <dc:Bounds x="438.3628034098865" y="770.3395335276908" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="438.3628034098865" y="811.3395335276908" width="36" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Event_ResponseTimeout" bpmnElement="Event_ResponseTimeout">
+        <dc:Bounds x="1562.751441655698" y="770.3395335276908" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1562.751441655698" y="811.3395335276908" width="36" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Activity_JxlkHJ" bpmnElement="Activity_JxlkHJ">
+        <dc:Bounds x="909.4059891138916" y="418.36016553920297" width="100" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="909.4059891138916" y="503.36016553920297" width="100" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Event_ximah3" bpmnElement="Event_ximah3">
+        <dc:Bounds x="941.4059891138916" y="480.36016553920297" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="941.4059891138916" y="521.360165539203" width="36" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Activity_csPgXO" bpmnElement="Activity_csPgXO">
+        <dc:Bounds x="909.4059891138916" y="591.3012715175373" width="100" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="909.4059891138916" y="676.3012715175373" width="100" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Activity_Ook413" bpmnElement="Activity_Ook413">
+        <dc:Bounds x="410.09277419496846" y="240" width="100" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="410.09277419496846" y="325" width="100" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Activity_iD34k7" bpmnElement="Activity_iD34k7">
+        <dc:Bounds x="563.487956991614" y="240" width="100" height="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="563.487956991614" y="325" width="100" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="BPMNEdge_Flow_StartToExtract" bpmnElement="Flow_StartToExtract">
+        <di:waypoint x="202" y="280" />
+        <di:waypoint x="260" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_Flow_MatchToGateway" bpmnElement="Flow_MatchToGateway">
+        <di:waypoint x="817" y="280" />
+        <di:waypoint x="877" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_Flow_EmailToGateway" bpmnElement="Flow_EmailToGateway">
+        <di:waypoint x="1186.4859511040663" y="703" />
+        <di:waypoint x="1186.4859511040663" y="763" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_Flow_GatewayToResponseEvent" bpmnElement="Flow_GatewayToResponseEvent">
+        <di:waypoint x="1162" y="788" />
+        <di:waypoint x="474" y="788" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_Flow_GatewayToTimeout" bpmnElement="Flow_GatewayToTimeout">
+        <di:waypoint x="1212" y="788" />
+        <di:waypoint x="1563" y="788" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_Flow_ApprovedToPayment" bpmnElement="Flow_ApprovedToPayment">
+        <di:waypoint x="1133" y="280" />
+        <di:waypoint x="1308" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_Flow_PaymentToUpdateERP" bpmnElement="Flow_PaymentToUpdateERP">
+        <di:waypoint x="1408" y="280" />
+        <di:waypoint x="1456" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_Flow_UpdateToEnd" bpmnElement="Flow_UpdateToEnd">
+        <di:waypoint x="1556" y="280" />
+        <di:waypoint x="1725" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_edge_lqa8gl" bpmnElement="edge_lqa8gl">
+        <di:waypoint x="1599" y="788" />
+        <di:waypoint x="1662" y="788" />
+        <di:waypoint x="1662" y="280" />
+        <di:waypoint x="1725" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_edge_Event_VendorResponse-Activity_InvoiceExtractmFFmyw" bpmnElement="edge_Event_VendorResponse-Activity_InvoiceExtractmFFmyw">
+        <di:waypoint x="438" y="788" />
+        <di:waypoint x="310" y="788" />
+        <di:waypoint x="310" y="320" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_edge_Aa4sOL" bpmnElement="edge_Aa4sOL">
+        <di:waypoint x="927" y="280" />
+        <di:waypoint x="959" y="280" />
+        <di:waypoint x="959" y="418" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_edge_88ghrw" bpmnElement="edge_88ghrw">
+        <di:waypoint x="1009" y="458" />
+        <di:waypoint x="1046" y="458" />
+        <di:waypoint x="1046" y="280" />
+        <di:waypoint x="1083" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_edge_Bz91yd" bpmnElement="edge_Bz91yd">
+        <di:waypoint x="1133" y="280" />
+        <di:waypoint x="1186" y="280" />
+        <di:waypoint x="1186" y="623" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_edge_T9hQMG" bpmnElement="edge_T9hQMG">
+        <di:waypoint x="959" y="516" />
+        <di:waypoint x="959" y="591" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_edge_6ScGC0" bpmnElement="edge_6ScGC0">
+        <di:waypoint x="1009" y="631" />
+        <di:waypoint x="1046" y="631" />
+        <di:waypoint x="1046" y="280" />
+        <di:waypoint x="1083" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_edge_DgvYFq" bpmnElement="edge_DgvYFq">
+        <di:waypoint x="927" y="280" />
+        <di:waypoint x="1083" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_edge_Activity_InvoiceExtract-Activity_Ook413rqbZj8" bpmnElement="edge_Activity_InvoiceExtract-Activity_Ook413rqbZj8">
+        <di:waypoint x="360" y="280" />
+        <di:waypoint x="410" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_edge_Activity_Ook413-Activity_iD34k7yOKAD6" bpmnElement="edge_Activity_Ook413-Activity_iD34k7yOKAD6">
+        <di:waypoint x="510" y="280" />
+        <di:waypoint x="563" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_edge_Activity_iD34k7-Activity_TwoWayMatchr0HAYF" bpmnElement="edge_Activity_iD34k7-Activity_TwoWayMatchr0HAYF">
+        <di:waypoint x="663" y="280" />
+        <di:waypoint x="717" y="280" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
